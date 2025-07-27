@@ -1,0 +1,214 @@
+---
+description: Structured logging standards and patterns for production systems
+globs: src/**/*.ts,src/**/*.tsx
+alwaysApply: false
+---
+
+# Structured Logging Standards
+
+## Required Log Fields
+Every log entry MUST include these standard fields:
+- `timestamp`: ISO 8601 format with timezone
+- `level`: error, warn, info, debug
+- `message`: Human-readable description
+- `operation`: Specific operation identifier
+- `traceId`: Unique request/session identifier
+- `userId`: User identifier (when applicable)
+
+Reference @analytics-error-handler.ts for implementation:
+```typescript
+interface LogEntry {
+  timestamp: string;
+  level: 'error' | 'warn' | 'info' | 'debug';
+  message: string;
+  operation: string;
+  traceId: string;
+  userId?: string;
+  context?: Record<string, unknown>;
+  error?: {
+    name: string;
+    message: string;
+    stack?: string;
+    cause?: unknown;
+  };
+}
+
+function createLogEntry(
+  level: LogLevel,
+  message: string,
+  operation: string,
+  context?: Record<string, unknown>
+): LogEntry {
+  return {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    operation,
+    traceId: getCurrentTraceId(),
+    userId: getCurrentUserId(),
+    context: sanitizeLogContext(context)
+  };
+}
+```
+
+## Log Levels and Usage
+Use appropriate log levels for different scenarios:
+
+### ERROR Level
+- Application errors requiring immediate attention
+- Failed API requests (5xx responses)
+- Database connection failures
+- Authentication failures
+- File system errors
+
+### WARN Level  
+- Deprecated API usage
+- Rate limiting triggered
+- Configuration issues
+- Retry attempts
+- Performance degradation
+
+### INFO Level
+- User actions (login, project creation)
+- Successful API requests
+- State transitions
+- Feature usage metrics
+- System startup/shutdown
+
+### DEBUG Level
+- Detailed execution flow
+- Variable values during debugging
+- Performance timing details
+- Only enabled in development
+
+## Security Requirements for Logging
+**NEVER log sensitive information:**
+- Passwords, tokens, API keys
+- Personal Identifiable Information (PII)
+- Credit card or payment information
+- Session tokens or cookies
+- Database credentials
+
+```typescript
+function sanitizeLogContext(context: Record<string, unknown>): Record<string, unknown> {
+  const sensitiveKeys = ['password', 'token', 'apiKey', 'secret', 'auth', 'credential'];
+  const sanitized = { ...context };
+  
+  for (const key of Object.keys(sanitized)) {
+    if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
+      sanitized[key] = '[REDACTED]';
+    }
+  }
+  
+  return sanitized;
+}
+```
+
+## Performance Logging Thresholds
+Log performance metrics when operations exceed thresholds:
+- Database queries: > 1000ms
+- API requests: > 2000ms  
+- Component renders: > 100ms
+- File operations: > 500ms
+
+```typescript
+async function logSlowOperation<T>(
+  operation: string,
+  threshold: number,
+  task: () => Promise<T>
+): Promise<T> {
+  const startTime = performance.now();
+  
+  try {
+    const result = await task();
+    const duration = performance.now() - startTime;
+    
+    if (duration > threshold) {
+      logger.warn('Slow operation detected', {
+        operation,
+        duration,
+        threshold
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    const duration = performance.now() - startTime;
+    logger.error('Operation failed', {
+      operation,
+      duration,
+      error: serializeError(error)
+    });
+    throw error;
+  }
+}
+```
+
+## Production vs Development Logging
+Configure different logging behaviors for environments:
+
+### Production
+- ERROR and WARN levels only
+- Structured JSON format for log aggregation
+- Remote logging to analytics service
+- No console.log statements
+- Sanitized context only
+
+### Development  
+- All log levels (ERROR, WARN, INFO, DEBUG)
+- Human-readable console output
+- Full context including sensitive data (local only)
+- Console debugging allowed
+
+Reference environment detection in @analytics-error-handler.ts:
+```typescript
+const isProduction = process.env.NODE_ENV === 'production';
+
+class Logger {
+  error(message: string, context?: Record<string, unknown>) {
+    const entry = createLogEntry('error', message, 'unknown', context);
+    
+    if (isProduction) {
+      this.sendToAnalytics(entry);
+    } else {
+      console.error(message, context);
+    }
+  }
+  
+  debug(message: string, context?: Record<string, unknown>) {
+    if (!isProduction) {
+      console.debug(message, context);
+    }
+    // Never send debug logs to production analytics
+  }
+}
+```
+
+## Error Serialization
+Properly serialize errors for logging:
+```typescript
+function serializeError(error: Error): Record<string, unknown> {
+  return {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+    cause: error.cause ? serializeError(error.cause as Error) : undefined
+  };
+}
+```
+
+## Log Aggregation and Search
+Structure logs for efficient searching and monitoring:
+- Use consistent field names across all components
+- Include correlation IDs for request tracing
+- Tag logs with component/feature identifiers
+- Reference @analytics-error-handler.ts for aggregation patterns
+
+## React Component Logging
+Log important component lifecycle events:
+- Component mount/unmount
+- Error boundary catches
+- Async operation results
+- User interaction events
+
+Reference logging patterns in @ProjectDetails.tsx and @App.tsx

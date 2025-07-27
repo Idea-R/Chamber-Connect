@@ -1,0 +1,69 @@
+---
+description: Essential error handling principles for all code
+alwaysApply: true
+---
+
+# Core Error Handling Framework
+
+## Error Classification System
+All errors MUST be classified into one of four categories:
+- **Validation errors**: Input validation, schema validation, type mismatches
+- **Domain errors**: Business logic violations, state conflicts, authorization failures  
+- **Infrastructure errors**: Database connections, network timeouts, file system issues
+- **Third-party errors**: External API failures, service unavailability
+
+## Error Wrapping Requirements
+- Always wrap raw errors with custom Error subclasses
+- Include `name` property identifying the error type
+- Include `cause` property with original error for debugging
+- Reference @errors.ts for standard error classes
+
+```typescript
+class ValidationError extends Error {
+  public readonly name = 'ValidationError';
+  constructor(message: string, public readonly cause?: Error) {
+    super(message);
+  }
+}
+```
+
+## Required Context Fields
+Every error must include:
+- `operation`: String identifying the operation that failed
+- `safeParams`: Sanitized parameters (NO sensitive data)
+- `traceId`: Unique identifier for request tracing
+- Reference @analytics-error-handler.ts for implementation patterns
+
+## Security Requirements
+**NEVER log sensitive information:**
+- API keys, passwords, tokens
+- Personal Identifiable Information (PII)
+- Authentication credentials
+- Database connection strings
+
+## AI Code Generation Guidelines
+When generating code with AI assistance:
+- Reject suggestions missing error classification
+- Require explicit error handling in all async functions
+- Ensure type safety in error handling chains
+- Reference @api-client.ts for proper error handling patterns
+
+## Error Boundaries
+- Use React Error Boundaries for component-level error isolation
+- Implement fallback UI for graceful degradation
+- Log errors to analytics system via @analytics-error-handler.ts
+
+## Async Error Handling
+```typescript
+type Result<T, E = Error> = 
+  | { success: true; data: T }
+  | { success: false; error: E };
+
+// Always handle both success and error cases
+const result = await riskyOperation();
+if (!result.success) {
+  // Handle error case
+  return;
+}
+// Use result.data safely
+```

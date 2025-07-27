@@ -1,0 +1,177 @@
+---
+description: External API call requirements with timeout, retry, and error mapping
+globs: src/lib/**/*,src/services/**/*,src/integrations/**/*
+alwaysApply: false
+---
+
+# External API Integration Requirements
+
+## Input Validation Before Requests
+NEVER send requests without validating input data:
+- Use @validation.ts utilities for input sanitization
+- Validate all parameters, headers, and body content
+- Reference @api-client.ts for validation patterns
+
+```typescript
+async function apiRequest<T>(params: ApiParams): Promise<Result<T, ApiError>> {
+  // Validate input first
+  const validation = validateApiParams(params);
+  if (!validation.success) {
+    return {
+      success: false,
+      error: new ValidationError('Invalid API parameters', validation.errors)
+    };
+  }
+  
+  // Proceed with request
+  return makeRequest(validation.data);
+}
+```
+
+## Configurable Timeouts
+Set appropriate timeouts for different operation types:
+- **API calls**: 30 seconds default
+- **Database operations**: 5 seconds default
+- **File uploads**: 60 seconds
+- **Authentication**: 10 seconds
+
+Reference @api-client.ts for timeout configuration:
+```typescript
+const timeoutConfig = {
+  api: 30000,      // 30s for API calls
+  database: 5000,  // 5s for DB operations
+  upload: 60000,   // 60s for file uploads
+  auth: 10000      // 10s for authentication
+};
+
+const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), timeoutConfig.api);
+```
+
+## Retry Logic with Exponential Backoff
+Implement retry patterns for transient failures:
+- Maximum 3 retry attempts
+- Exponential backoff: 1s, 2s, 4s delays
+- Only retry on specific error codes (500, 502, 503, 504)
+- Reference @api-client.ts retry implementation
+
+```typescript
+async function retryableRequest<T>(
+  request: () => Promise<T>,
+  maxRetries = 3
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await request();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Don't retry on client errors (4xx)
+      if (!isRetryableError(error)) {
+        throw error;
+      }
+      
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        await sleep(delay);
+      }
+    }
+  }
+  
+  throw lastError;
+}
+```
+
+## Circuit Breaker Patterns
+Implement circuit breakers for external service protection:
+- Track failure rates over time windows
+- Open circuit after threshold failures (50% over 1 minute)
+- Half-open state for recovery testing
+- Reference patterns in @api-client.ts
+
+```typescript
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime = 0;
+  private state: 'closed' | 'open' | 'half-open' = 'closed';
+  
+  async execute<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.state === 'open') {
+      if (Date.now() - this.lastFailureTime > this.resetTimeout) {
+        this.state = 'half-open';
+      } else {
+        throw new CircuitBreakerError('Service temporarily unavailable');
+      }
+    }
+    
+    try {
+      const result = await operation();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+}
+```
+
+## Error Mapping from HTTP Status Codes
+Map HTTP status codes to application errors:
+- 400-499: Client errors (ValidationError, AuthError)
+- 500-599: Server errors (InfrastructureError)
+- Network errors: InfrastructureError
+- Timeout errors: InfrastructureError
+
+```typescript
+function mapHttpError(status: number, message: string): ApplicationError {
+  if (status >= 400 && status < 500) {
+    switch (status) {
+      case 401:
+        return new AuthError('Authentication required', { status });
+      case 403:
+        return new AuthError('Access forbidden', { status });
+      case 404:
+        return new NotFoundError('Resource not found', { status });
+      default:
+        return new ValidationError('Client error', { status, message });
+    }
+  }
+  
+  if (status >= 500) {
+    return new InfrastructureError('Server error', { status, message });
+  }
+  
+  return new InfrastructureError('Unknown error', { status, message });
+}
+```
+
+## API Client Configuration
+Reference @api-client.ts for standard client setup:
+- Base URL configuration
+- Default headers (Content-Type, User-Agent)
+- Authentication header management
+- Request/response interceptors for logging
+
+## Supabase Integration Patterns
+Reference @client.ts in integrations/supabase for:
+- Database connection error handling
+- Auth state management
+- Real-time subscription error handling
+- File storage error mapping
+
+## Third-Party Service Integration
+For external services (GitHub, Claude API):
+- Use service-specific error handling
+- Reference @claudeApi.ts in services directory
+- Implement rate limiting awareness
+- Handle API key validation
+
+## Request Logging and Monitoring
+Log all external API interactions:
+- Request URL, method, headers (sanitized)
+- Response status, timing, size
+- Error details for failed requests
+- Reference @analytics-error-handler.ts for logging patterns

@@ -1,0 +1,98 @@
+---
+description: React component patterns, hooks, and error boundaries
+globs: src/**/*.tsx,src/components/**/*,src/hooks/**/*
+alwaysApply: false
+---
+
+# React Component Error Handling Patterns
+
+## Error Boundary Implementation
+Every component tree MUST have error boundaries at appropriate levels:
+- Reference @error-boundary.tsx for standard implementation
+- Use in @App.tsx and major page components like @ProjectDetails.tsx
+- Provide meaningful fallback UI for graceful degradation
+
+```typescript
+class ComponentErrorBoundary extends Component<Props, State> {
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+  
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Log to analytics system
+    reportError(error, { operation: 'component-render', errorInfo });
+  }
+}
+```
+
+## Component Error Reporting
+- Always wrap async operations in try-catch blocks
+- Use error state for user feedback
+- Log errors through @analytics-error-handler.ts
+- Never expose raw error messages to users
+
+## Custom Hooks Error Handling
+Reference existing patterns in:
+- @useAuth.tsx for authentication errors
+- @useProjects.ts for data fetching errors
+- @useToast.ts for user notifications
+
+Required pattern for custom hooks:
+```typescript
+export function useDataFetching<T>() {
+  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<T | null>(null);
+  
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiCall();
+      setData(result);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      // Report error for monitoring
+      reportError(error, { operation: 'data-fetch' });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  return { data, error, loading, fetchData };
+}
+```
+
+## Loading/Error/Success State Patterns
+Components MUST handle all three states:
+- **Loading**: Show skeleton screens or spinners
+- **Error**: Display user-friendly error messages
+- **Success**: Render actual content
+
+Reference @enhanced-project-grid.tsx for loading states
+Reference @floating-phase-activity.tsx for error handling
+
+## Form Validation and Error Display
+- Use proper form validation patterns
+- Display field-level errors near inputs
+- Reference @create-project-dialog.tsx for comprehensive form handling
+- Always prevent form submission on validation errors
+
+## Component Lifecycle Error Handling
+- Handle errors in useEffect hooks
+- Clean up subscriptions and event listeners
+- Use AbortController for cancelling requests
+- Reference @ProjectDetails.tsx for lifecycle management
+
+## Toast Notifications for Errors
+- Use @use-toast.ts for user notifications
+- Classify error severity: info, warning, error, success
+- Provide actionable error messages when possible
+- Never show technical stack traces to users
+
+## Performance Error Boundaries
+- Monitor render performance
+- Log slow renders (>16ms) for optimization
+- Use React.memo and useMemo appropriately
+- Reference performance patterns in @enhanced-roadmap.tsx

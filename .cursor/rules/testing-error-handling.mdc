@@ -1,0 +1,265 @@
+---
+description: Testing patterns for error handling in React components and services
+globs: src/**/*.test.ts,src/**/*.test.tsx,src/__tests__/**/*
+alwaysApply: false
+---
+
+# Testing Error Handling Patterns
+
+## Error Type Testing Requirements
+Test all error scenarios for proper error type creation and handling:
+- Verify error classification (validation, domain, infrastructure, third-party)
+- Test error context inclusion (operation, traceId, safeParams)
+- Validate error chaining with cause property
+- Reference patterns from existing @__tests__ directory
+
+```typescript
+describe('ValidationError', () => {
+  it('should create error with proper classification', () => {
+    const error = new ValidationError('Invalid input', 'user-validation', {
+      field: 'email',
+      value: 'invalid-email'
+    });
+    
+    expect(error.name).toBe('ValidationError');
+    expect(error.operation).toBe('user-validation');
+    expect(error.context.field).toBe('email');
+    expect(error.cause).toBeUndefined();
+  });
+  
+  it('should chain errors properly', () => {
+    const originalError = new Error('Network timeout');
+    const wrappedError = new InfrastructureError(
+      'Failed to save user',
+      'user-save',
+      { userId: '123' },
+      originalError
+    );
+    
+    expect(wrappedError.cause).toBe(originalError);
+    expect(wrappedError.context.userId).toBe('123');
+  });
+});
+```
+
+## React Error Boundary Testing
+Test Error Boundaries catch and handle component errors:
+- Test error boundary catches render errors
+- Verify fallback UI is displayed
+- Test error reporting to analytics
+- Reference @error-boundary.tsx for testing patterns
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+
+const ThrowError = ({ shouldThrow }: { shouldThrow: boolean }) => {
+  if (shouldThrow) {
+    throw new Error('Test error');
+  }
+  return <div>No error</div>;
+};
+
+describe('ErrorBoundary', () => {
+  it('should catch component errors and show fallback UI', () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    
+    render(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={true} />
+      </ErrorBoundary>
+    );
+    
+    expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+    expect(consoleSpy).toHaveBeenCalled();
+    
+    consoleSpy.mockRestore();
+  });
+  
+  it('should render children when no error occurs', () => {
+    render(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={false} />
+      </ErrorBoundary>
+    );
+    
+    expect(screen.getByText('No error')).toBeInTheDocument();
+  });
+});
+```
+
+## API Timeout and Retry Testing
+Test timeout and retry mechanisms for external API calls:
+- Mock API timeouts using fake timers
+- Verify retry attempts with exponential backoff
+- Test circuit breaker state transitions
+- Reference @api-client.ts testing patterns
+
+```typescript
+import { jest } from '@jest/globals';
+
+describe('API retry logic', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+  
+  it('should retry on transient failures', async () => {
+    const mockFetch = jest.fn()
+      .mockRejectedValueOnce(new Error('Network timeout'))
+      .mockRejectedValueOnce(new Error('Server error'))
+      .mockResolvedValueOnce({ ok: true, json: () => ({ data: 'success' }) });
+    
+    global.fetch = mockFetch;
+    
+    const result = await retryableApiCall('/api/test');
+    
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(result.data).toBe('success');
+  });
+  
+  it('should not retry on client errors', async () => {
+    const mockFetch = jest.fn()
+      .mockResolvedValue({ 
+        ok: false, 
+        status: 400, 
+        json: () => ({ error: 'Bad request' }) 
+      });
+    
+    global.fetch = mockFetch;
+    
+    await expect(retryableApiCall('/api/test')).rejects.toThrow();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+## Custom Hook Error Testing
+Test error handling in custom hooks:
+- Test loading, error, and success states
+- Verify error state updates correctly
+- Test cleanup on unmount
+- Reference @useProjects.ts, @useAuth.tsx testing patterns
+
+```typescript
+import { renderHook, waitFor } from '@testing-library/react';
+import { useDataFetching } from '@/hooks/useDataFetching';
+
+describe('useDataFetching', () => {
+  it('should handle fetch errors correctly', async () => {
+    const mockFetch = jest.fn().mockRejectedValue(new Error('API error'));
+    global.fetch = mockFetch;
+    
+    const { result } = renderHook(() => useDataFetching('/api/test'));
+    
+    result.current.fetchData();
+    
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.error).toBeInstanceOf(Error);
+      expect(result.current.data).toBeNull();
+    });
+  });
+  
+  it('should reset error state on successful fetch', async () => {
+    const mockFetch = jest.fn()
+      .mockRejectedValueOnce(new Error('API error'))
+      .mockResolvedValueOnce({ ok: true, json: () => ({ data: 'success' }) });
+    
+    global.fetch = mockFetch;
+    
+    const { result } = renderHook(() => useDataFetching('/api/test'));
+    
+    // First call fails
+    result.current.fetchData();
+    await waitFor(() => expect(result.current.error).toBeTruthy());
+    
+    // Second call succeeds
+    result.current.fetchData();
+    await waitFor(() => {
+      expect(result.current.error).toBeNull();
+      expect(result.current.data).toEqual({ data: 'success' });
+    });
+  });
+});
+```
+
+## Log Assertion Testing
+Test that errors are properly logged to analytics:
+- Mock analytics service calls
+- Verify log entries contain required fields
+- Test log sanitization for sensitive data
+- Reference @analytics-error-handler.ts testing patterns
+
+```typescript
+import * as analytics from '@/lib/analytics-error-handler';
+
+describe('Error logging', () => {
+  let logSpy: jest.SpyInstance;
+  
+  beforeEach(() => {
+    logSpy = jest.spyOn(analytics, 'reportError').mockImplementation();
+  });
+  
+  afterEach(() => {
+    logSpy.mockRestore();
+  });
+  
+  it('should log errors with required fields', async () => {
+    const error = new ValidationError('Test error', 'test-operation');
+    
+    analytics.reportError(error, { userId: '123' });
+    
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'ValidationError',
+        message: 'Test error',
+        operation: 'test-operation',
+        context: expect.objectContaining({
+          userId: '123'
+        })
+      })
+    );
+  });
+  
+  it('should sanitize sensitive data in logs', () => {
+    const error = new ValidationError('Auth failed', 'authentication');
+    const context = {
+      email: 'user@example.com',
+      password: 'secret123',
+      apiKey: 'sk-123456'
+    };
+    
+    analytics.reportError(error, context);
+    
+    const loggedContext = logSpy.mock.calls[0][1];
+    expect(loggedContext.email).toBe('user@example.com');
+    expect(loggedContext.password).toBe('[REDACTED]');
+    expect(loggedContext.apiKey).toBe('[REDACTED]');
+  });
+});
+```
+
+## Integration Test Error Scenarios
+Test end-to-end error scenarios:
+- Test component error recovery
+- Test API error handling in real workflows
+- Test error boundary integration
+- Reference component integration patterns
+
+## Test Environment Configuration
+Configure test environment for error testing:
+- Mock external services consistently
+- Use test utilities for error injection
+- Configure appropriate test timeouts
+- Set up proper test cleanup
+
+## Performance Testing Error Paths
+Test error handling performance:
+- Verify error creation doesn't cause memory leaks
+- Test error boundary render performance
+- Monitor test execution time for error scenarios
+- Reference performance testing patterns in codebase

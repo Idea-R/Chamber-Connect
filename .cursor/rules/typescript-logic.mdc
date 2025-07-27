@@ -1,0 +1,165 @@
+---
+description: TypeScript error handling and type safety requirements
+globs: src/**/*.ts,src/**/*.tsx,!src/**/*.test.*
+alwaysApply: false
+---
+
+# TypeScript Error Handling and Type Safety
+
+## Strict Type Checking Requirements
+- Use strict TypeScript configuration (see @tsconfig.json)
+- Enable strict null checks and no implicit any
+- No `any` types unless absolutely necessary with explicit comment justification
+- Use unknown instead of any for better type safety
+
+## Error Type Definitions
+Define proper interfaces for all error objects and API responses:
+- Reference @errors.ts for standard error type definitions
+- Reference @supabase.ts in types directory for database error types
+- Use discriminated unions for error states
+
+Required error type pattern:
+```typescript
+interface BaseError {
+  readonly name: string;
+  readonly message: string;
+  readonly operation: string;
+  readonly traceId: string;
+  readonly timestamp: Date;
+}
+
+interface ValidationError extends BaseError {
+  readonly name: 'ValidationError';
+  readonly field: string;
+  readonly value: unknown;
+}
+
+interface DomainError extends BaseError {
+  readonly name: 'DomainError';
+  readonly code: string;
+  readonly context: Record<string, unknown>;
+}
+
+type ApplicationError = ValidationError | DomainError | InfrastructureError;
+```
+
+## Result Type Pattern
+Use Result<T, E> pattern for operations that can fail:
+```typescript
+type Result<T, E = Error> = 
+  | { success: true; data: T }
+  | { success: false; error: E };
+
+// Example usage in API functions
+async function fetchProject(id: string): Promise<Result<Project, ApplicationError>> {
+  try {
+    const project = await api.getProject(id);
+    return { success: true, data: project };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: new DomainError('Failed to fetch project', 'project-fetch', { id })
+    };
+  }
+}
+```
+
+## Async Function Error Handling
+All async functions MUST:
+- Return Result<T, E> or throw typed errors
+- Handle both network and business logic errors
+- Include proper error context
+- Reference @api-client.ts for implementation patterns
+
+```typescript
+async function processData<T>(data: unknown): Promise<Result<T, ValidationError>> {
+  // Validate input
+  const validationResult = validateInput(data);
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: new ValidationError(
+        'Invalid input data',
+        'data-validation',
+        { received: data }
+      )
+    };
+  }
+  
+  try {
+    const processed = await processValidData(validationResult.data);
+    return { success: true, data: processed };
+  } catch (error) {
+    return {
+      success: false,
+      error: new InfrastructureError(
+        'Processing failed',
+        'data-processing',
+        { originalError: error }
+      )
+    };
+  }
+}
+```
+
+## Type Guards and Validation
+Use proper type guards for runtime type checking:
+- Reference @validation.ts for validation utilities
+- Always validate external data (API responses, user input)
+- Use libraries like Zod for schema validation when appropriate
+
+```typescript
+function isProject(value: unknown): value is Project {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'title' in value &&
+    typeof (value as any).id === 'string' &&
+    typeof (value as any).title === 'string'
+  );
+}
+```
+
+## Null Safety and Optional Properties
+- Use optional chaining (?.) and nullish coalescing (??)
+- Explicitly handle null and undefined cases
+- Use NonNullable<T> type when values are guaranteed to exist
+
+## Generic Type Constraints
+Use proper generic constraints for type safety:
+```typescript
+interface ApiResponse<T = unknown> {
+  data: T;
+  error?: ApplicationError;
+  metadata: {
+    timestamp: string;
+    traceId: string;
+  };
+}
+
+function processApiResponse<T extends Record<string, unknown>>(
+  response: ApiResponse<T>
+): Result<T, ApplicationError> {
+  if (response.error) {
+    return { success: false, error: response.error };
+  }
+  return { success: true, data: response.data };
+}
+```
+
+## Union Types for State Management
+Use discriminated unions for component state:
+```typescript
+type AsyncState<T, E = Error> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: E };
+```
+
+## Error Handling in Type Definitions
+Reference existing patterns in:
+- @project.ts for domain type definitions
+- @supabase.ts for database interaction types
+- Ensure all error cases are represented in types
