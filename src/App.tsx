@@ -25,6 +25,7 @@ const Pricing = lazy(() => import('@/pages/pricing/Pricing').then(m => ({ defaul
 const Checkout = lazy(() => import('@/pages/pricing/Checkout').then(m => ({ default: m.Checkout })))
 const Success = lazy(() => import('@/pages/pricing/Success').then(m => ({ default: m.Success })))
 const AccountUpgrade = lazy(() => import('@/pages/pricing/AccountUpgrade').then(m => ({ default: m.AccountUpgrade })))
+const AdminDashboard = lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
 
 // Loading component with error boundary
 function PageLoading() {
@@ -133,6 +134,13 @@ function App() {
                       <ErrorBoundary operation="dashboard" retryable>
                         <ProtectedRoute>
                           <Dashboard />
+                        </ProtectedRoute>
+                      </ErrorBoundary>
+                    } />
+                    <Route path="/admin" element={
+                      <ErrorBoundary operation="admin-dashboard" retryable>
+                        <ProtectedRoute>
+                          <AdminDashboard />
                         </ProtectedRoute>
                       </ErrorBoundary>
                     } />

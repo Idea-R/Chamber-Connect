@@ -1,1 +1,12 @@
-/*    /index.html   200
+# SPA fallback for React Router
+/* /index.html 200
+
+# API redirects (if using Cloudflare Functions later)
+/api/* /api/:splat 200
+
+# Security headers
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-XSS-Protection: 1; mode=block

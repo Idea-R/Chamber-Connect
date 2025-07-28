@@ -4,12 +4,16 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Building2, Calendar, Users, MessageSquare, Star, Settings, LogOut, Bell, Globe, ChevronDown } from 'lucide-react'
+import { Building2, Calendar, Users, MessageSquare, Star, Settings, LogOut, Bell, Globe, ChevronDown, Shield } from 'lucide-react'
 
 export function Sidebar() {
   const location = useLocation()
-  const { user, signOut, currentBusiness, currentChamber, userChambers } = useAuth()
+  const { user, signOut, currentBusiness, currentChamber, userChambers, userProfile, primaryMembership } = useAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
+
+  // Check if user is admin
+  const isAdmin = userProfile?.role === 'chamber_admin' || 
+                  ['admin', 'staff'].includes(primaryMembership?.role || '')
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Building2 },
@@ -18,6 +22,7 @@ export function Sidebar() {
     { name: 'Members', href: '/members', icon: Users },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
     { name: 'Spotlights', href: '/spotlights', icon: Star },
+    ...(isAdmin ? [{ name: 'Admin Dashboard', href: '/admin', icon: Shield }] : []),
   ]
 
   const handleLogout = () => {
@@ -26,7 +31,7 @@ export function Sidebar() {
 
   const displayName = currentBusiness?.contact_name || currentChamber?.name || user?.email || 'User'
   const businessName = currentBusiness?.name || currentChamber?.name || 
-                      (userChambers.length > 0 ? userChambers[0].chamber?.name : 'Chamber Connect')
+                      (userChambers.length > 0 && userChambers[0]?.chamber?.name ? userChambers[0].chamber.name : 'Chamber Connect')
   const avatarUrl = currentBusiness?.contact_avatar_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400'
 
   return (

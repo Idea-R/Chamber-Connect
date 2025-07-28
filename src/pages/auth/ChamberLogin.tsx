@@ -30,8 +30,8 @@ export function ChamberLogin() {
     setIsLoading(true)
     
     try {
-      console.log('Demo login attempt for charles.r.sears@gmail.com')
-      const result = await signIn('charles.r.sears@gmail.com', 'demo123')
+      console.log('Demo login attempt for charles.demo@gmail.com')
+      const result = await signIn('charles.demo@gmail.com', 'Demo123!@#')
       
       if (result.error) {
         console.error('Demo login error:', result.error)
@@ -40,7 +40,7 @@ export function ChamberLogin() {
         if (result.error.message.includes('Invalid login credentials')) {
           alert(`Demo account not yet configured. Please contact your administrator to set up demo data.
           
-Expected demo account: charles.r.sears@gmail.com
+Expected demo account: charles.demo@gmail.com
 Error: ${result.error.message}`)
         } else {
           alert(`Demo login failed: ${result.error.message || 'Unknown error'}`)
@@ -83,9 +83,13 @@ Error: ${result.error.message}`)
         
         alert(errorMessage)
       } else {
-        console.log('Login successful, redirecting to dashboard')
+        console.log('Login successful, checking redirect destination')
+        // Check if user came from admin route or should go to admin
+        const urlParams = new URLSearchParams(window.location.search)
+        const redirectTo = urlParams.get('redirect') || '/dashboard'
+        
         // Give auth context more time to update
-        setTimeout(() => navigate('/dashboard'), 1000)
+        setTimeout(() => navigate(redirectTo), 1000)
       }
     } catch (error) {
       console.error('Unexpected login error:', error)

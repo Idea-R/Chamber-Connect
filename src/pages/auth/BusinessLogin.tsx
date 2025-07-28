@@ -25,8 +25,8 @@ export function BusinessLogin() {
     setIsDemoLoading(true)
     
     try {
-      console.log('Demo business login attempt for sarah.johnson@demomarketing.com')
-      const result = await signIn('sarah.johnson@demomarketing.com', 'demo123')
+      console.log('Demo business login attempt for sarah.demo@demomarketing.com')
+      const result = await signIn('sarah.demo@demomarketing.com', 'Demo123!@#')
       
       if (result.error) {
         console.error('Demo business login error:', result.error)
@@ -35,7 +35,7 @@ export function BusinessLogin() {
         if (result.error.message.includes('Invalid login credentials')) {
           alert(`Demo business account not yet configured. Please contact your administrator to set up demo data.
           
-Expected demo account: sarah.johnson@demomarketing.com
+Expected demo account: sarah.demo@demomarketing.com
 Error: ${result.error.message}`)
         } else {
           alert(`Demo login failed: ${result.error.message || 'Unknown error'}`)

@@ -59,7 +59,8 @@ export function ProtectedRoute({
 
   if (!user) {
     console.log('No user found, redirecting to login.')
-    return <Navigate to="/auth/chamber-login" state={{ from: location }} replace />
+    const redirectUrl = `/auth/chamber-login?redirect=${encodeURIComponent(location.pathname)}`
+    return <Navigate to={redirectUrl} state={{ from: location }} replace />
   }
 
   // Check specific requirements

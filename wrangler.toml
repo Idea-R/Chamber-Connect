@@ -1,0 +1,13 @@
+name = "chamber-connect"
+compatibility_date = "2025-01-27"
+
+[env.production]
+vars = { NODE_ENV = "production" }
+
+[env.staging]
+vars = { NODE_ENV = "staging" }
+
+# Environment variables will be set in Cloudflare Dashboard
+# VITE_SUPABASE_URL
+# VITE_SUPABASE_ANON_KEY  
+# VITE_STRIPE_PUBLISHABLE_KEY 

@@ -1,0 +1,150 @@
+---
+description: "Security Gate — org-level guardrails for GitHub, site structure, DB/RLS, auth/session, headers/CSP, CI scanning. Run on every feature/PR/deploy."
+alwaysApply: true
+---
+
+# Security Gate (Run at: repo init, before PR merge, before deploy)
+
+## Assumptions (defaults if not specified)
+- Framework: Next.js + Node API; Package manager: pnpm.
+- CI: GitHub Actions; IaC: none unless /infra exists.
+- DB: Postgres/Supabase; multi-tenant if `memberships` table exists, else single-user.
+- Secrets live only in GitHub Environments/Actions; locals use `.env` (ignored) + `.env.example`.
+
+## Invocation
+Respond when the prompt includes: "run security gate", "security review", "pre‑merge gate", or "@security-gate".
+
+## Output Contract
+Return exactly:
+- Summary (≤2 bullets)
+- Diffs/Files: list of paths + full file contents if new/missing
+- Risks (≤3 bullets)
+- Next steps (≤3 bullets)
+If a required file is missing, output the **entire file** ready to commit.
+
+## How to Run
+- When asked "run security gate" or at PR/deploy time, perform the checklist below and propose concrete diffs/files. Keep answers ≤200 words unless code. Reference files with @, create missing ones.
+
+## Scope
+- GitHub hygiene, branch protection, secret scanning, CodeQL scans.
+- App/site structure & environment separation.
+- Database (Postgres/Supabase) with **mandatory RLS** and least‑privilege policies.
+- Auth/session hardening.
+- HTTP security headers & **strict CSP**.
+- Dependencies & supply chain sanity.
+
+---
+
+## A. GitHub Hygiene (Org/Repo)
+- Enforce **protected branches**: require PRs, passing checks, **signed commits**, include admins. Add/update `.github` policies if missing.  
+- Enable **CodeQL code scanning** (default or advanced) on push/PR + weekly; add workflow if absent.  
+- Enable **secret scanning + push protection** across repos; block commits with detected secrets; configure patterns; auto‑review bypass via GitHub App if org policy allows.  
+- Use **OIDC** for cloud access in Actions (no long‑lived cloud keys).  
+- Output: propose/update: `.github/workflows/codeql.yml`, `.github/workflows/push-protection.yml` (if needed), and org README for required settings.
+
+## B. Site/App Structure
+- Envs: `apps/web`, `apps/api`, `infra/` for IaC, `database/` for migrations, `policies/` for RLS SQL, `packages/` for shared libs.  
+- `.env.example` present; never commit `.env`. Add `gitignore` rules and a **secrets handling note**.  
+- For performance critical areas, mark `// PERF:` and require Big‑O note + micro‑bench harness.
+
+## C. Database & RLS (Postgres/Supabase)
+- **RLS must be enabled on all user‑reachable tables**; default‑deny policies.  
+- Multi‑tenant: scope by `tenant_id` and membership; single‑user: scope by `user_id`.  
+- Output: generate SQL migration under `policies/` for each table, plus tests (SQL snippets or unit tests hitting the DB adapter).
+
+**RLS policy templates**
+```sql
+-- Enable RLS (idempotent)
+alter table public.profiles enable row level security;
+
+-- Single-user table pattern
+create policy "select_own" on public.profiles
+  for select using (user_id = auth.uid());
+create policy "modify_own" on public.profiles
+  for update using (user_id = auth.uid());
+-- Insert rule if server inserts only:
+-- create policy "insert_self" on public.profiles for insert with check (user_id = auth.uid());
+
+-- Multi-tenant pattern (membership table: memberships(user_id, tenant_id))
+create policy "tenant_select" on public.records
+  for select using (
+    exists (select 1 from public.memberships m
+            where m.user_id = auth.uid() and m.tenant_id = records.tenant_id)
+  );
+create policy "tenant_modify" on public.records
+  for update using (
+    exists (select 1 from public.memberships m
+            where m.user_id = auth.uid() and m.tenant_id = records.tenant_id)
+  ) with check (
+    exists (select 1 from public.memberships m
+            where m.user_id = auth.uid() and m.tenant_id = records.tenant_id)
+  );
+```
+
+## D. Auth & Session
+- Cookies: `Secure; HttpOnly; SameSite=Lax` (Strict if flows tolerate it). Prefer **session cookies** over localStorage for auth.  
+- Rotate tokens; minimal scopes; short TTL for access, longer for refresh, server‑side rotation.
+
+## E. HTTP Security Headers & CSP
+- Set baseline: `Content-Security-Policy` (strict nonce/hash‑based), `X-Frame-Options: DENY` (or CSP `frame-ancestors 'none'`), `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security` (with preload once confident), `Permissions-Policy` minimal.  
+- Use **Report‑Only** CSP first; then enforce.
+
+**Express/Next.js header scaffold**
+```ts
+// apps/web/middleware/secureHeaders.ts
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+
+export function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "no-referrer");
+  res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  res.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  // Prefer nonces; example Report-Only for rollout:
+  res.headers.set("Content-Security-Policy-Report-Only",
+    "default-src 'self'; script-src 'self' 'nonce-{RUNTIME_NONCE}'; style-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
+  return res;
+}
+```
+
+## F. CI/CD Security
+- Add CodeQL workflow if missing; run on push/PR + cron.  
+- Gate merges on: tests, typecheck/lint, CodeQL, secret scanning clean, image/package audit.  
+- Use OIDC in cloud deploy jobs; block self‑hosted runners without explicit labels.
+
+**Minimal CodeQL workflow**
+```yaml
+# .github/workflows/codeql.yml
+name: CodeQL
+on:
+  push: {branches: [main]}
+  pull_request: {branches: [main]}
+  schedule: [{cron: "0 3 * * 1"}]
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions: {actions: read, contents: read, security-events: write}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with: {languages: javascript, queries: security-extended}
+      - uses: github/codeql-action/analyze@v3
+```
+
+**AWS deploy (OIDC snippet)**
+```yaml
+- uses: aws-actions/configure-aws-credentials@v4
+  with:
+    role-to-assume: arn:aws:iam::<acct>:role/github-oidc-deploy
+    aws-region: us-west-2
+- run: ./scripts/deploy.sh
+```
+
+## G. Dependencies & Supply Chain
+- No new runtime deps without justification + license note.  
+- Lockfiles committed; renovate/dependabot enabled; `npm audit --omit=dev`/`pnpm audit` in CI.  
+- Disallow post‑install scripts unless required.
+
+## H. Output Format (when running)
+- **Summary** (1–2 bullets), **Diffs/Files** to add/change, **Risks** left, **Next steps**. No fluff. Keep it terse.
