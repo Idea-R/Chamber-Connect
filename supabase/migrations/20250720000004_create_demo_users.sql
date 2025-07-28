@@ -1,5 +1,5 @@
--- Migration: Create Demo Users and Chamber Data
--- Purpose: Set up demo accounts for testing Chamber Connect functionality
+-- Migration: Create Demo Chamber and Admin Account Setup
+-- Purpose: Set up demo chamber and admin account for testing Chamber Connect functionality
 
 -- Create demo chamber
 INSERT INTO chambers (
@@ -57,17 +57,14 @@ INSERT INTO businesses (
   description = EXCLUDED.description,
   updated_at = now();
 
--- Note: Demo users need to be created through Supabase Auth
--- This can be done via Supabase dashboard or auth API
--- Demo accounts to create:
--- 1. charles.r.sears@gmail.com (Chamber Admin) - password: demo123
--- 2. sarah.johnson@demomarketing.com (Business Owner) - password: demo123
--- 3. staff@demomarketing.com (Business Staff) - password: demo123
+-- Note: Admin account to be created through Supabase Auth with Google OAuth
+-- Single admin account will use DevAdminPortal role switching to test:
+-- - super_admin: Ultimate developer access
+-- - chamber_admin: Chamber administrator functionality  
+-- - business_owner: Standard business member access
+-- - business_trial: Limited trial access
 
--- Create user profiles for demo accounts (to be run after users are created in auth)
--- These will be linked when the auth users are created
-
--- Demo chamber membership for Charles (Chamber Admin)
+-- Demo chamber membership for admin account (to be linked after OAuth setup)
 INSERT INTO chamber_memberships (
   id,
   user_id,
@@ -78,7 +75,7 @@ INSERT INTO chamber_memberships (
   created_at
 ) VALUES (
   '00000000-0000-0000-0000-000000000003',
-  '00000000-0000-0000-0000-000000000010', -- Will be Charles's user ID
+  '00000000-0000-0000-0000-000000000010', -- Will be admin user ID after OAuth setup
   '00000000-0000-0000-0000-000000000001',
   'admin',
   'active',
@@ -86,7 +83,7 @@ INSERT INTO chamber_memberships (
   now()
 ) ON CONFLICT (id) DO NOTHING;
 
--- Demo business membership for Sarah (Business Owner)
+-- Demo business membership for admin account (for testing business views)
 INSERT INTO business_memberships (
   id,
   user_id,
@@ -96,7 +93,7 @@ INSERT INTO business_memberships (
   created_at
 ) VALUES (
   '00000000-0000-0000-0000-000000000004',
-  '00000000-0000-0000-0000-000000000011', -- Will be Sarah's user ID
+  '00000000-0000-0000-0000-000000000010', -- Same admin user ID
   '00000000-0000-0000-0000-000000000002',
   'owner',
   'active',
@@ -129,7 +126,7 @@ INSERT INTO events (
   'networking',
   true,
   50,
-  '00000000-0000-0000-0000-000000000010', -- Charles (Chamber Admin)
+  '00000000-0000-0000-0000-000000000010', -- Admin user ID
   '00000000-0000-0000-0000-000000000001',
   now()
 ) ON CONFLICT (id) DO NOTHING;

@@ -26,37 +26,7 @@ export function ChamberLogin() {
 
   const { signIn } = auth
 
-  const handleDemoLogin = async () => {
-    setIsLoading(true)
-    
-    try {
-      console.log('Demo login attempt for charles.demo@gmail.com')
-      const result = await signIn('charles.demo@gmail.com', 'Demo123!@#')
-      
-      if (result.error) {
-        console.error('Demo login error:', result.error)
-        
-        // Better error messaging for demo users
-        if (result.error.message.includes('Invalid login credentials')) {
-          alert(`Demo account not yet configured. Please contact your administrator to set up demo data.
-          
-Expected demo account: charles.demo@gmail.com
-Error: ${result.error.message}`)
-        } else {
-          alert(`Demo login failed: ${result.error.message || 'Unknown error'}`)
-        }
-      } else {
-        console.log('Demo login successful')
-        // Give auth context time to update
-        setTimeout(() => navigate('/dashboard'), 1000)
-      }
-    } catch (error) {
-      console.error('Demo login error:', error)
-      alert('Demo login failed. Please try again or contact support.')
-    } finally {
-      setTimeout(() => setIsLoading(false), 2000)
-    }
-  }
+  // Demo login removed - use DevAdminPortal for testing
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -186,22 +156,7 @@ Error: ${result.error.message}`)
                   Start your free trial
                 </Link>
               </p>
-              
-              {/* Demo Login Button */}
-              <div className="mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDemoLogin}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  Try Demo Login
-                </Button>
-                <p className="text-xs text-gray-500 mt-2">
-                  Use demo credentials to test the platform
-                </p>
-              </div>
+              {/* Demo removed - use DevAdminPortal for testing */}
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200">

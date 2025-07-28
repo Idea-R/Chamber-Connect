@@ -13,7 +13,7 @@ export function BusinessLogin() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isDemoLoading, setIsDemoLoading] = useState(false)
+  // Demo loading state removed
 
   if (!auth) {
     return <div>Loading authentication...</div>
@@ -21,37 +21,7 @@ export function BusinessLogin() {
 
   const { signIn } = auth
 
-  const handleDemoLogin = async () => {
-    setIsDemoLoading(true)
-    
-    try {
-      console.log('Demo business login attempt for sarah.demo@demomarketing.com')
-      const result = await signIn('sarah.demo@demomarketing.com', 'Demo123!@#')
-      
-      if (result.error) {
-        console.error('Demo business login error:', result.error)
-        
-        // Better error messaging for demo users
-        if (result.error.message.includes('Invalid login credentials')) {
-          alert(`Demo business account not yet configured. Please contact your administrator to set up demo data.
-          
-Expected demo account: sarah.demo@demomarketing.com
-Error: ${result.error.message}`)
-        } else {
-          alert(`Demo login failed: ${result.error.message || 'Unknown error'}`)
-        }
-      } else {
-        console.log('Demo business login successful')
-        // Give auth context time to update
-        setTimeout(() => navigate('/dashboard'), 1000)
-      }
-    } catch (error) {
-      console.error('Demo business login error:', error)
-      alert('Demo login failed. Please try again or contact support.')
-    } finally {
-      setTimeout(() => setIsDemoLoading(false), 2000)
-    }
-  }
+  // Demo login removed - use DevAdminPortal for testing
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -174,15 +144,6 @@ Error: ${result.error.message}`)
                 Register Your Business
               </Button>
             </Link>
-
-            <Button 
-              onClick={handleDemoLogin} 
-              variant="outline" 
-              className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
-              disabled={isDemoLoading}
-            >
-              {isDemoLoading ? 'Loading Demo...' : 'Try Business Demo'}
-            </Button>
 
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <div className="flex items-start space-x-2">

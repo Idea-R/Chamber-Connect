@@ -24,3 +24,10 @@ docs
 *.sln
 *.sw?
 .env
+
+# IDE and tool directories
+.cursor/
+.qodo/
+
+# Cloudflare
+.wrangler/

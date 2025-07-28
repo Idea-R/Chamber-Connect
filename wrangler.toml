@@ -1,13 +1,18 @@
 name = "chamber-connect"
 compatibility_date = "2025-01-27"
+pages_build_output_dir = "./dist"
+
+# Environment variables for all environments
+[vars]
+NODE_ENV = "development"
 
 [env.production]
 vars = { NODE_ENV = "production" }
 
-[env.staging]
-vars = { NODE_ENV = "staging" }
+[env.preview]
+vars = { NODE_ENV = "preview" }
 
-# Environment variables will be set in Cloudflare Dashboard
+# Note: These environment variables should be set in Cloudflare Dashboard:
 # VITE_SUPABASE_URL
 # VITE_SUPABASE_ANON_KEY  
 # VITE_STRIPE_PUBLISHABLE_KEY 
