@@ -159,3 +159,6 @@ export function Success() {
     </div>
   )
 }
+
+// Add default export to fix import error in App.tsx
+export default Success

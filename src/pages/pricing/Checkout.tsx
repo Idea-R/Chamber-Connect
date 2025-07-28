@@ -364,3 +364,6 @@ export function Checkout() {
     </div>
   )
 }
+
+// Add default export to fix import error in App.tsx
+export default Checkout

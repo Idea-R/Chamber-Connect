@@ -66,7 +66,7 @@ export function AccountUpgrade() {
             </p>
           </div>
           <Badge className="bg-blue-100 text-blue-800 mt-4 sm:mt-0">
-            Current Plan: {currentPlanData.name}
+            Current Plan: {currentPlanData?.name || 'Loading...'}
           </Badge>
         </div>
 
@@ -237,3 +237,6 @@ export function AccountUpgrade() {
     </Layout>
   )
 }
+
+// Add default export to fix import error in App.tsx
+export default AccountUpgrade
