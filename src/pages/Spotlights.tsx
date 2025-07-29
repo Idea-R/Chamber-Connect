@@ -244,3 +244,5 @@ export function Spotlights() {
     </Layout>
   )
 }
+
+export default Spotlights

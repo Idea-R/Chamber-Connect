@@ -290,4 +290,7 @@ export class AsyncErrorBoundary extends Component<Props, State> {
 
     return this.props.children;
   }
-} 
+}
+
+// Default export for common usage
+export default ErrorBoundary 

@@ -629,3 +629,5 @@ export function ChamberPageManager() {
     </Layout>
   )
 }
+
+export default ChamberPageManager

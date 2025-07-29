@@ -402,3 +402,5 @@ export function Messages() {
     </Layout>
   )
 }
+
+export default Messages

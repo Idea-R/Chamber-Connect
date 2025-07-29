@@ -102,3 +102,5 @@ export function ProtectedRoute({
   console.log('ProtectedRoute allowing access')
   return <>{children}</>
 }
+
+export default ProtectedRoute

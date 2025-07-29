@@ -314,3 +314,5 @@ export function Members() {
     </Layout>
   )
 }
+
+export default Members

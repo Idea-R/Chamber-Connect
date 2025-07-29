@@ -414,3 +414,5 @@ export function PublicChamberPage() {
     </div>
   )
 }
+
+export default PublicChamberPage
