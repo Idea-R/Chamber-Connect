@@ -37,7 +37,7 @@ async function setupAdminAccount() {
       options: {
         data: {
           full_name: 'Chamber Connect Admin',
-          user_type: 'super_admin'
+          user_type: 'chamber_admin' // Use valid role value
         }
       }
     })
@@ -49,14 +49,14 @@ async function setupAdminAccount() {
 
     console.log('✅ Admin account created:', adminAuth.user?.id)
 
-    // Create user profile
+    // Create user profile with valid role
     const { error: adminProfileError } = await supabase
       .from('user_profiles')
       .upsert({
         id: adminAuth.user.id,
         email: adminEmail,
         full_name: 'Chamber Connect Admin',
-        role: 'super_admin'
+        role: 'chamber_admin' // Use constraint-compliant role
       })
 
     if (adminProfileError) {
@@ -69,7 +69,7 @@ async function setupAdminAccount() {
     let { data: chamber, error: chamberError } = await supabase
       .from('chambers')
       .select('id')
-      .eq('name', 'Springfield Chamber of Commerce')
+      .eq('slug', 'springfield-chamber')
       .single()
 
     if (chamberError && chamberError.code === 'PGRST116') {
@@ -82,8 +82,8 @@ async function setupAdminAccount() {
           description: 'Demo chamber for testing MVP features',
           email: 'info@springfieldchamber.org',
           phone: '(555) 123-4567',
-          address: '123 Main St, Springfield, IL 62701',
-          user_id: adminAuth.user.id
+          address: '123 Main St, Springfield, IL 62701'
+          // Note: user_id will be set via chamber membership instead
         })
         .select('id')
         .single()
@@ -97,7 +97,7 @@ async function setupAdminAccount() {
       console.log('✅ Demo chamber created')
     }
 
-    // Create chamber membership for admin
+    // Create chamber membership for admin (this is the new way)
     const { error: membershipError } = await supabase
       .from('chamber_memberships')
       .upsert({
@@ -113,47 +113,48 @@ async function setupAdminAccount() {
       console.log('✅ Admin chamber membership created')
     }
 
-    // Get demo business
-    let { data: business, error: businessError } = await supabase
+    // Get demo business (if exists from previous migrations)
+    let { data: business } = await supabase
       .from('businesses')
       .select('id')
-      .eq('name', 'Demo Marketing Solutions')
+      .eq('slug', 'demo-marketing')
       .single()
 
     if (business) {
-      // Create business membership for admin (enables business role testing)
-      const { error: businessMembershipError } = await supabase
-        .from('business_memberships')
-        .upsert({
-          user_id: adminAuth.user.id,
-          business_id: business.id,
-          role: 'owner',
-          status: 'active'
-        })
+      // Link business to admin user
+      const { error: businessUpdateError } = await supabase
+        .from('businesses')
+        .update({ user_id: adminAuth.user.id })
+        .eq('id', business.id)
 
-      if (businessMembershipError) {
-        console.error('❌ Failed to create admin business membership:', businessMembershipError.message)
+      if (businessUpdateError) {
+        console.error('❌ Failed to link business to admin:', businessUpdateError.message)
       } else {
-        console.log('✅ Admin business membership created')
+        console.log('✅ Demo business linked to admin')
       }
     }
 
     console.log('\n🎉 Admin account setup complete!')
     console.log('\n📋 Admin Credentials (Backup):')
-    console.log('👨‍💼 Super Admin:')
+    console.log('👨‍💼 Chamber Admin:')
     console.log('   Email: admin@chamber-connect.com')
     console.log('   Password: Admin123!@#')
-    console.log('   Access: All dashboards + DevAdminPortal role switching')
-    console.log('\n🔄 Role Switching Available:')
-    console.log('   - super_admin: Ultimate developer access')
-    console.log('   - chamber_admin: Chamber administrator')
-    console.log('   - business_owner: Standard business member')
-    console.log('   - business_trial: Limited trial access')
+    console.log('   Access: Chamber dashboard + DevAdminPortal role switching')
+    console.log('\n🔄 Role Switching Available (via DevAdminPortal):')
+    console.log('   - chamber_admin: Chamber administrator access')
+    console.log('   - business_owner: Standard business member access')
+    console.log('   - staff: Limited staff access')
     console.log('\n🌐 Test URLs:')
     console.log('   Main Dashboard: http://localhost:5173/dashboard')
-    console.log('   Admin Dashboard: http://localhost:5173/admin')
-    console.log('   Dev Tools: Available in development mode')
-    console.log('\n⚡ Primary Auth: Google OAuth (configure in Supabase + Cloudflare)')
+    console.log('   Chamber Login: http://localhost:5173/chamber/login')
+    console.log('   Business Login: http://localhost:5173/business/login')
+    console.log('   Pricing Page: http://localhost:5173/pricing')
+    console.log('\n⚡ Primary Auth: Google OAuth (configure in Supabase dashboard)')
+    console.log('\n📊 Next Steps:')
+    console.log('   1. Configure Google OAuth in Supabase dashboard')
+    console.log('   2. Add Stripe publishable key to .env file')
+    console.log('   3. Test OAuth login and role switching')
+    console.log('   4. Test pricing and checkout flows')
 
   } catch (error) {
     console.error('❌ Setup failed:', error)
