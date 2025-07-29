@@ -252,3 +252,5 @@ export function MemberLogin() {
     </div>
   )
 }
+
+export default MemberLogin

@@ -218,4 +218,6 @@ export function BusinessLogin() {
       </div>
     </div>
   )
-} 
+}
+
+export default BusinessLogin 

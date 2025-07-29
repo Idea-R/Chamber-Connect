@@ -234,3 +234,5 @@ export function ChamberLogin() {
     </div>
   )
 }
+
+export default ChamberLogin

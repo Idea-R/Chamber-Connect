@@ -395,4 +395,6 @@ export function BusinessSignup() {
       </div>
     </div>
   )
-} 
+}
+
+export default BusinessSignup 
