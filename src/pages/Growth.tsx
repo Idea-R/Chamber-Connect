@@ -27,12 +27,19 @@ export default function Growth() {
   const [monthlyDues, setMonthlyDues] = useState(50)
   const [trialConversionRate, setTrialConversionRate] = useState(30)
   const [trialsPerMonth, setTrialsPerMonth] = useState(20)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
+  const [showTieredOptions, setShowTieredOptions] = useState(false)
 
   // Calculate growth metrics
   const newMembersPerMonth = Math.round(trialsPerMonth * (trialConversionRate / 100))
   const newMembersPerYear = newMembersPerMonth * 12
-  const additionalRevenue = newMembersPerYear * monthlyDues * 12
-  const platformCost = currentMembers * monthlyDues * 12 * 0.10
+  
+  // Adjust for billing cycle (yearly often has discounts)
+  const yearlyDiscount = 0.15 // 15% discount for yearly billing
+  const effectiveMonthlyDues = billingCycle === 'yearly' ? monthlyDues * (1 - yearlyDiscount) : monthlyDues
+  
+  const additionalRevenue = newMembersPerYear * effectiveMonthlyDues * 12
+  const platformCost = currentMembers * effectiveMonthlyDues * 12 * 0.10
   const netGrowthRevenue = additionalRevenue - platformCost
 
   return (
@@ -150,6 +157,41 @@ export default function Growth() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Billing Cycle Toggle */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Billing Cycle
+                    </label>
+                    <div className="flex bg-gray-100 rounded-lg p-1">
+                      <button
+                        onClick={() => setBillingCycle('monthly')}
+                        className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+                          billingCycle === 'monthly'
+                            ? 'bg-green-600 text-white'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        Monthly
+                      </button>
+                      <button
+                        onClick={() => setBillingCycle('yearly')}
+                        className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+                          billingCycle === 'yearly'
+                            ? 'bg-green-600 text-white'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        Yearly (15% off)
+                      </button>
+                    </div>
+                    {billingCycle === 'yearly' && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Effective monthly rate: ${effectiveMonthlyDues.toFixed(0)} 
+                        (${(monthlyDues * yearlyDiscount).toFixed(0)} savings/member/month)
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -235,20 +277,26 @@ export default function Growth() {
                   <h3 className="text-lg font-semibold text-green-800">Growth Insights</h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-start space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-green-700">
-                      <strong>ROI:</strong> Every trial member who converts generates 
-                      ${(monthlyDues * 12).toLocaleString()} in annual revenue
-                    </p>
-                  </div>
-                  <div className="flex items-start space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-green-700">
-                      <strong>Platform pays for itself:</strong> Growth revenue covers all platform costs 
-                      with ${netGrowthRevenue.toLocaleString()} extra annually
-                    </p>
-                  </div>
+                                     <div className="flex items-start space-x-2">
+                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                     <p className="text-green-700">
+                       <strong>ROI:</strong> Every trial member who converts generates 
+                       ${(effectiveMonthlyDues * 12).toLocaleString()} in annual revenue
+                       {billingCycle === 'yearly' && (
+                         <span className="text-xs"> (with yearly discount)</span>
+                       )}
+                     </p>
+                   </div>
+                   <div className="flex items-start space-x-2">
+                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                     <p className="text-green-700">
+                       <strong>Platform pays for itself:</strong> Growth revenue covers all platform costs 
+                       with ${netGrowthRevenue.toLocaleString()} extra annually
+                       {billingCycle === 'yearly' && (
+                         <span className="text-xs"> (including yearly savings)</span>
+                       )}
+                     </p>
+                   </div>
                   <div className="flex items-start space-x-2">
                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                     <p className="text-green-700">
@@ -437,6 +485,232 @@ export default function Growth() {
                     Sponsorship opportunities
                   </li>
                 </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Tiered Membership Options */}
+        <div className="mt-16">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Flexible Membership Tiers</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Create customized membership levels for your chamber. Offer premium features to sponsors 
+              and major contributors while providing value at every level.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowTieredOptions(!showTieredOptions)}
+              className="mt-4"
+            >
+              {showTieredOptions ? 'Hide' : 'Show'} Tiered Options
+            </Button>
+          </div>
+
+          {showTieredOptions && (
+            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {/* Silver Tier */}
+              <Card className="border-gray-300 hover:shadow-lg transition-shadow">
+                <CardHeader className="bg-gray-50 rounded-t-lg">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl text-gray-700">Silver Membership</CardTitle>
+                    <Badge variant="outline" className="bg-gray-100">Standard</Badge>
+                  </div>
+                  <CardDescription>Perfect for small businesses and startups</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="text-center mb-6">
+                    <div className="text-3xl font-bold text-gray-700">${monthlyDues}</div>
+                    <div className="text-sm text-gray-500">per month</div>
+                    {billingCycle === 'yearly' && (
+                      <div className="text-xs text-green-600">
+                        ${(monthlyDues * 12 * (1 - yearlyDiscount)).toFixed(0)}/year (15% off)
+                      </div>
+                    )}
+                  </div>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Member directory access
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Event registration
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Basic networking tools
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Monthly newsletter
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Gold Tier */}
+              <Card className="border-yellow-300 hover:shadow-lg transition-shadow relative">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-yellow-500 text-white">Most Popular</Badge>
+                </div>
+                <CardHeader className="bg-yellow-50 rounded-t-lg">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl text-yellow-700">Gold Membership</CardTitle>
+                    <Badge variant="outline" className="bg-yellow-100 text-yellow-700">Enhanced</Badge>
+                  </div>
+                  <CardDescription>Ideal for growing businesses and active networkers</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="text-center mb-6">
+                    <div className="text-3xl font-bold text-yellow-700">${Math.round(monthlyDues * 1.5)}</div>
+                    <div className="text-sm text-gray-500">per month</div>
+                    {billingCycle === 'yearly' && (
+                      <div className="text-xs text-green-600">
+                        ${(monthlyDues * 1.5 * 12 * (1 - yearlyDiscount)).toFixed(0)}/year (15% off)
+                      </div>
+                    )}
+                  </div>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Everything in Silver
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Priority event access
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Business spotlight opportunities
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Quarterly networking mixers
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Enhanced profile features
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Platinum Tier */}
+              <Card className="border-purple-300 hover:shadow-lg transition-shadow">
+                <CardHeader className="bg-purple-50 rounded-t-lg">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl text-purple-700">Platinum Membership</CardTitle>
+                    <Badge variant="outline" className="bg-purple-100 text-purple-700">Premium</Badge>
+                  </div>
+                  <CardDescription>For sponsors and major chamber contributors</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="text-center mb-6">
+                    <div className="text-3xl font-bold text-purple-700">${Math.round(monthlyDues * 2.5)}</div>
+                    <div className="text-sm text-gray-500">per month</div>
+                    {billingCycle === 'yearly' && (
+                      <div className="text-xs text-green-600">
+                        ${(monthlyDues * 2.5 * 12 * (1 - yearlyDiscount)).toFixed(0)}/year (15% off)
+                      </div>
+                    )}
+                  </div>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Everything in Gold
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Exclusive sponsor events
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Premium business listings
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Board meeting participation
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Custom sponsorship opportunities
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                      Dedicated chamber liaison
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Pricing Flexibility Info */}
+          <div className="mt-12 max-w-4xl mx-auto">
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-8">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-blue-900 mb-2">Complete Pricing Flexibility</h3>
+                  <p className="text-blue-700">
+                    Chamber Connect adapts to your chamber's unique pricing strategy
+                  </p>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div>
+                    <h4 className="font-semibold text-blue-900 mb-3">Billing Options</h4>
+                    <ul className="space-y-2 text-sm text-blue-700">
+                      <li className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                        Monthly or yearly billing cycles
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                        Custom yearly discounts (5-25%)
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                        Automatic recurring payments
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                        Prorated upgrades/downgrades
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold text-blue-900 mb-3">Membership Tiers</h4>
+                    <ul className="space-y-2 text-sm text-blue-700">
+                      <li className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                        Unlimited custom membership levels
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                        Tailored features per tier
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                        Sponsor-exclusive benefits
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                        Easy tier management dashboard
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <div className="text-center mt-6">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => navigate('/auth/chamber-signup')}
+                  >
+                    Set Up Your Pricing Structure
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
