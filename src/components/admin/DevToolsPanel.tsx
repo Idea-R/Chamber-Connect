@@ -10,15 +10,49 @@ import {
   Bug,
   Database,
   Users,
-  Shield
+  Shield,
+  LogIn,
+  LogOut,
+  User
 } from 'lucide-react'
 import { useDevAdmin } from '@/contexts/DevAdminContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { DevAdminPortal } from './DevAdminPortal'
+
+// Test user accounts for each role
+const TEST_USERS = {
+  super_admin: {
+    email: 'admin@chamber-connect.com',
+    password: 'Admin123!@#',
+    name: 'Super Admin',
+    description: 'Full system access'
+  },
+  chamber_admin: {
+    email: 'chamber.admin@test-chamber.com',
+    password: 'Chamber123!@#',
+    name: 'Chamber Admin',
+    description: 'Chamber management'
+  },
+  business_owner: {
+    email: 'business.owner@test-business.com',
+    password: 'Business123!@#',
+    name: 'Business Owner',
+    description: 'Business profile management'
+  },
+  business_trial: {
+    email: 'trial.user@test-trial.com',
+    password: 'Trial123!@#',
+    name: 'Trial User',
+    description: 'Limited trial access'
+  }
+} as const
 
 export function DevToolsPanel() {
   const devAdminContext = useDevAdmin()
+  const { user, signIn, signOut } = useAuth()
   const [isMinimized, setIsMinimized] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
+  const [loginLoading, setLoginLoading] = useState<string | null>(null)
 
   // Handle case where context is not available
   if (!devAdminContext) {
@@ -29,6 +63,32 @@ export function DevToolsPanel() {
 
   if (!devState.isDevMode || !isVisible) {
     return null
+  }
+
+  const handleTestLogin = async (userType: keyof typeof TEST_USERS) => {
+    const testUser = TEST_USERS[userType]
+    setLoginLoading(userType)
+    
+    try {
+      await signIn(testUser.email, testUser.password)
+      // Switch to the appropriate role after login
+      setTimeout(() => {
+        switchRole(userType)
+      }, 1000)
+    } catch (error) {
+      console.error(`Failed to login as ${userType}:`, error)
+      alert(`Failed to login as ${testUser.name}. Make sure demo users are set up.`)
+    } finally {
+      setLoginLoading(null)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Failed to logout:', error)
+    }
   }
 
   return (
@@ -86,6 +146,77 @@ export function DevToolsPanel() {
           </CardHeader>
           
           <CardContent className="p-4 space-y-4">
+            {/* Authentication Status */}
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm flex items-center">
+                <User className="h-4 w-4 mr-1" />
+                Authentication
+              </h4>
+              <div className="p-2 bg-gray-50 rounded border">
+                {user ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs">
+                        <div className="font-medium">{user.email}</div>
+                        <div className="text-gray-500">Logged in</div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleLogout}
+                        className="h-6 text-xs"
+                      >
+                        <LogOut className="h-3 w-3 mr-1" />
+                        Logout
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-500">Not logged in</div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Test Login */}
+            {!user && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm flex items-center">
+                  <LogIn className="h-4 w-4 mr-1" />
+                  Quick Test Login
+                </h4>
+                <div className="space-y-1">
+                  {Object.entries(TEST_USERS).map(([userType, userData]) => (
+                    <Button
+                      key={userType}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleTestLogin(userType as keyof typeof TEST_USERS)}
+                      disabled={loginLoading === userType}
+                      className="w-full h-8 text-xs justify-start"
+                    >
+                      {loginLoading === userType ? (
+                        <>
+                          <div className="animate-spin h-3 w-3 mr-2 border border-gray-300 border-t-gray-600 rounded-full" />
+                          Logging in...
+                        </>
+                      ) : (
+                        <>
+                          <LogIn className="h-3 w-3 mr-2" />
+                          {userData.name}
+                          <Badge variant="secondary" className="ml-auto text-xs">
+                            {userType}
+                          </Badge>
+                        </>
+                      )}
+                    </Button>
+                  ))}
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  💡 Tip: Run <code>npm run setup-demo</code> to create test accounts
+                </div>
+              </div>
+            )}
+
             {/* Current State */}
             <div className="space-y-2">
               <h4 className="font-medium text-sm">Current State</h4>
