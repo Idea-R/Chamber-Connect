@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useDevAdmin } from '@/contexts/DevAdminContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import { DevAdminPortal } from './DevAdminPortal'
 
 // Test user accounts for each role
@@ -50,6 +51,7 @@ const TEST_USERS = {
 export function DevToolsPanel() {
   const devAdminContext = useDevAdmin()
   const { user, signIn, signOut } = useAuth()
+  const navigate = useNavigate()
   const [isMinimized, setIsMinimized] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
   const [loginLoading, setLoginLoading] = useState<string | null>(null)
@@ -70,11 +72,19 @@ export function DevToolsPanel() {
     setLoginLoading(userType)
     
     try {
-      await signIn(testUser.email, testUser.password)
-      // Switch to the appropriate role after login
-      setTimeout(() => {
-        switchRole(userType)
-      }, 1000)
+      const result = await signIn(testUser.email, testUser.password)
+      if (!result.error) {
+        // Switch to the appropriate role after login
+        setTimeout(() => {
+          switchRole(userType)
+        }, 500)
+        // Navigate to dashboard after successful login
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 1000)
+      } else {
+        throw new Error(result.error.message)
+      }
     } catch (error) {
       console.error(`Failed to login as ${userType}:`, error)
       alert(`Failed to login as ${testUser.name}. Make sure demo users are set up.`)
