@@ -18,7 +18,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "type-check": "tsc --noEmit",
-    "setup-demo": "node scripts/setup-demo-users.js"
+    "setup-demo": "node scripts/setup-demo-users.js",
+    "test-stripe": "node scripts/test-stripe-integration.js"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.4.0",
