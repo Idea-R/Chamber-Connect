@@ -53,8 +53,8 @@ export default function Growth() {
   }
   
   const additionalRevenue = newMembersPerYear * annualRevenuePerMember
-  const platformCost = currentMembers * annualRevenuePerMember * 0.10
-  const netGrowthRevenue = additionalRevenue - platformCost
+  const additionalPlatformCost = newMembersPerYear * annualRevenuePerMember * 0.10
+  const netGrowthRevenue = additionalRevenue - additionalPlatformCost
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -351,10 +351,10 @@ export default function Growth() {
                    <div className="flex items-start space-x-2">
                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                      <p className="text-green-700">
-                       <strong>Platform pays for itself:</strong> Growth revenue covers all platform costs 
-                       with ${netGrowthRevenue.toLocaleString()} extra annually
+                       <strong>Net growth revenue:</strong> Additional revenue minus platform costs for new members 
+                       equals ${netGrowthRevenue.toLocaleString()} pure growth annually
                        {billingMode === 'yearly' && (
-                         <span className="text-xs"> (including ${yearlyDiscount}% yearly savings)</span>
+                         <span className="text-xs"> (with ${yearlyDiscount}% yearly discount applied)</span>
                        )}
                      </p>
                    </div>
