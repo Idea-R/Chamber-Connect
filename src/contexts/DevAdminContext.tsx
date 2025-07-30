@@ -69,7 +69,7 @@ const ROLE_PERMISSIONS = {
     'event_registration',
     'networking'
   ],
-  business_trial: [
+  staff: [
     'limited_profile',
     'trial_events',
     'basic_networking'

@@ -74,9 +74,9 @@ export function DevAdminPortal({
       icon: <Users className="h-4 w-4" />
     },
     {
-      id: 'business_trial',
-      name: 'Business Trial',
-      description: 'Trial business with limited access',
+      id: 'staff',
+      name: 'Staff Member',
+      description: 'Staff member with limited access',
       permissions: ['limited_profile', 'trial_events', 'basic_networking'],
       icon: <Eye className="h-4 w-4" />
     }
@@ -299,12 +299,12 @@ export function DevAdminPortal({
             </Button>
             
             <Button 
-              onClick={() => handleQuickSwitch('business_trial', 'chamber-austin')}
+              onClick={() => handleQuickSwitch('staff', 'chamber-austin')}
               variant="outline"
               className="h-auto p-3 flex flex-col items-center space-y-1"
             >
               <Eye className="h-4 w-4" />
-              <span className="text-xs">Trial User</span>
+              <span className="text-xs">Staff User</span>
             </Button>
             
             <Button 

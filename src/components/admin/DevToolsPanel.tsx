@@ -39,11 +39,11 @@ const TEST_USERS = {
     name: 'Business Owner',
     description: 'Business profile management'
   },
-  business_trial: {
+  staff: {
     email: 'trial.user@test-trial.com',
     password: 'Trial123!@#',
-    name: 'Trial User',
-    description: 'Limited trial access'
+    name: 'Staff User',
+    description: 'Limited staff access'
   }
 } as const
 
@@ -269,12 +269,12 @@ export function DevToolsPanel() {
                 </Button>
                 <Button
                   size="sm"
-                  variant={devState.currentRole === 'business_trial' ? 'default' : 'outline'}
-                  onClick={() => switchRole('business_trial')}
+                  variant={devState.currentRole === 'staff' ? 'default' : 'outline'}
+                  onClick={() => switchRole('staff')}
                   className="h-8 text-xs"
                 >
                   <Database className="h-3 w-3 mr-1" />
-                  Trial
+                  Staff
                 </Button>
               </div>
             </div>

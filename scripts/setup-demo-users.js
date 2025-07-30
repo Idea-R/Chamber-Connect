@@ -54,7 +54,7 @@ async function setupAdminAccount() {
         email: 'trial.user@test-trial.com',
         password: 'Trial123!@#',
         name: 'Test Trial User',
-        role: 'business_trial',
+        role: 'staff',
         type: 'Trial User'
       }
     ]
