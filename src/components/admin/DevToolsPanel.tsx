@@ -16,9 +16,16 @@ import { useDevAdmin } from '@/contexts/DevAdminContext'
 import { DevAdminPortal } from './DevAdminPortal'
 
 export function DevToolsPanel() {
-  const { devState, switchRole, switchChamber, toggleDebugMode, resetToCleanState } = useDevAdmin()
+  const devAdminContext = useDevAdmin()
   const [isMinimized, setIsMinimized] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
+
+  // Handle case where context is not available
+  if (!devAdminContext) {
+    return null
+  }
+
+  const { devState, switchRole, switchChamber, toggleDebugMode, resetToCleanState } = devAdminContext
 
   if (!devState.isDevMode || !isVisible) {
     return null
@@ -192,7 +199,7 @@ export function DevToolsPanel() {
 
 // Component to toggle dev tools visibility
 export function DevToolsToggle() {
-  const { devState } = useDevAdmin()
+  const { devState, switchRole, switchChamber } = useDevAdmin()
   const [showPanel, setShowPanel] = useState(false)
 
   if (!devState.isDevMode) {

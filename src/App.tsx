@@ -52,9 +52,20 @@ function App() {
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/pricing" element={<Pricing />} />
-                <Route path="/trial" element={<FreeTrial />} />
+                <Route path="/pricing/free-trial" element={<FreeTrial />} />
+                <Route path="/pricing/checkout" element={<Checkout />} />
+                <Route path="/pricing/success" element={<Success />} />
+                <Route path="/pricing/account-upgrade" element={<AccountUpgrade />} />
                 
                 {/* Auth Routes */}
+                <Route path="/auth/chamber-login" element={<ChamberLogin />} />
+                <Route path="/auth/chamber-signup" element={<ChamberSignup />} />
+                <Route path="/auth/business-login" element={<BusinessLogin />} />
+                <Route path="/auth/business-signup" element={<BusinessSignup />} />
+                <Route path="/auth/member-login" element={<MemberLogin />} />
+                <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                
+                {/* Legacy Auth Routes (backward compatibility) */}
                 <Route path="/chamber/login" element={<ChamberLogin />} />
                 <Route path="/chamber/signup" element={<ChamberSignup />} />
                 <Route path="/business/login" element={<BusinessLogin />} />
@@ -62,12 +73,14 @@ function App() {
                 <Route path="/member/login" element={<MemberLogin />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 
-                {/* Pricing & Payment Routes */}
+                {/* Legacy Pricing Routes (backward compatibility) */}
+                <Route path="/trial" element={<FreeTrial />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/success" element={<Success />} />
                 <Route path="/upgrade" element={<AccountUpgrade />} />
                 
                 {/* Public Chamber Pages */}
+                <Route path="/chambers/:chamberSlug" element={<PublicChamberPage />} />
                 <Route path="/chamber/:chamberSlug" element={<PublicChamberPage />} />
                 
                 {/* Protected Routes */}
@@ -111,7 +124,7 @@ function App() {
                   </ProtectedRoute>
                 } />
                 
-                <Route path="/chamber-page" element={
+                <Route path="/chamber-page-manager" element={
                   <ProtectedRoute>
                     <Layout>
                       <ChamberPageManager />
