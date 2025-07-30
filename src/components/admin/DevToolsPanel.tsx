@@ -72,8 +72,11 @@ export function DevToolsPanel() {
     setLoginLoading(userType)
     
     try {
+      console.log(`🔐 Attempting login as ${testUser.name} (${testUser.email})`)
       const result = await signIn(testUser.email, testUser.password)
+      
       if (!result.error) {
+        console.log(`✅ Login successful for ${testUser.name}`)
         // Switch to the appropriate role after login
         setTimeout(() => {
           switchRole(userType)
@@ -83,11 +86,13 @@ export function DevToolsPanel() {
           navigate('/dashboard')
         }, 1000)
       } else {
-        throw new Error(result.error.message)
+        console.error(`❌ Login failed for ${testUser.name}:`, result.error)
+        throw new Error(result.error.message || 'Login failed')
       }
     } catch (error) {
-      console.error(`Failed to login as ${userType}:`, error)
-      alert(`Failed to login as ${testUser.name}. Make sure demo users are set up.`)
+      console.error(`💥 Exception during login as ${userType}:`, error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`❌ Failed to login as ${testUser.name}\n\nError: ${errorMessage}\n\nMake sure:\n• Demo users are set up (run: npm run setup-demo)\n• Internet connection is working\n• Supabase is configured correctly`)
     } finally {
       setLoginLoading(null)
     }

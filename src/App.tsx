@@ -34,6 +34,7 @@ import AccountUpgrade from './pages/pricing/AccountUpgrade'
 // Public Pages
 import PublicChamberPage from './pages/PublicChamberPage'
 import ChamberPageManager from './pages/ChamberPageManager'
+import Growth from './pages/Growth'
 
 // Error Boundary
 import ErrorBoundary from './components/ui/error-boundary'
@@ -52,6 +53,7 @@ function App() {
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route path="/growth" element={<Growth />} />
                 <Route path="/pricing/free-trial" element={<FreeTrial />} />
                 <Route path="/pricing/checkout" element={<Checkout />} />
                 <Route path="/pricing/success" element={<Success />} />

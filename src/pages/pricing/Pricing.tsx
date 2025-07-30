@@ -206,6 +206,32 @@ export function Pricing() {
                     Non-active members cost you nothing.
                   </p>
                 </div>
+
+                {/* Member Growth Impact */}
+                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center justify-center mb-3">
+                    <TrendingUp className="h-5 w-5 text-green-600 mr-2" />
+                    <h4 className="font-semibold text-green-800">Member Growth Impact</h4>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-green-700 mb-2">
+                      <strong>Number of new members needed to cover Chamber Connect dues:</strong>
+                    </p>
+                    <div className="bg-green-100 rounded-lg p-3 mb-3">
+                      <div className="text-2xl font-bold text-green-800">
+                        {Math.ceil(annualPlatformFee / duesAmount)} members
+                      </div>
+                      <div className="text-sm text-green-600">
+                        (${annualPlatformFee.toFixed(0)} ÷ ${duesAmount} annual dues)
+                      </div>
+                    </div>
+                    <p className="text-sm text-green-700">
+                      <strong>All other new members are pure growth</strong> and provide additional funding for 
+                      chamber events, activities, and initiatives. The platform becomes a powerful member 
+                      acquisition and retention tool that pays for itself.
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
