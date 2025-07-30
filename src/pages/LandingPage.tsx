@@ -67,6 +67,12 @@ export function LandingPage() {
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-4">
                 <Button variant="ghost" asChild>
+                  <Link to="/pricing">Pricing</Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link to="/growth">Growth</Link>
+                </Button>
+                <Button variant="ghost" asChild>
                   <Link to="/auth/chamber-login">Chamber Login</Link>
                 </Button>
                 <Button variant="ghost" asChild>
@@ -88,6 +94,20 @@ export function LandingPage() {
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-gray-200 py-4">
               <div className="flex flex-col space-y-2">
+                <Link
+                  to="/pricing"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Pricing
+                </Link>
+                <Link
+                  to="/growth"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Growth
+                </Link>
                 <Link
                   to="/auth/chamber-login"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md"
@@ -180,8 +200,9 @@ export function LandingPage() {
                 Why Chamber Connect?
               </h2>
               <p className="text-lg text-gray-600 mb-8">
-                ROI justified by attracting just 1 new member per month. 
-                Provide modern tools that increase event attendance and member engagement.
+                ROI justified by attracting just a few new members per month. The platform 
+                pays for itself while providing modern tools that dramatically increase 
+                engagement, retention, and revenue.
               </p>
               <div className="space-y-4">
                 {benefits.map((benefit, index) => (
@@ -191,6 +212,11 @@ export function LandingPage() {
                   </div>
                 ))}
               </div>
+              <div className="mt-6">
+                <Button variant="outline" asChild>
+                  <Link to="/growth">See Growth Calculator <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+              </div>
             </div>
             <div className="bg-white p-8 rounded-lg shadow-lg">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
@@ -199,21 +225,26 @@ export function LandingPage() {
               <div className="space-y-4">
                 <div className="border-b pb-4">
                   <h4 className="font-medium text-gray-900">Chamber Subscription</h4>
-                  <p className="text-sm text-gray-600">Tiered pricing: Solo/Agency/Enterprise</p>
+                  <p className="text-sm text-gray-600">Pay only for active platform members</p>
                 </div>
                 <div className="border-b pb-4">
                   <h4 className="font-medium text-gray-900">Member Pricing</h4>
-                  <p className="text-sm text-gray-600">$0.50 per business signup</p>
-                  <p className="text-sm text-gray-600">$50/month minimum</p>
+                  <p className="text-sm text-gray-600">10% of your chamber dues</p>
+                  <p className="text-sm text-gray-600">Only pay for active users</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Free Tier</h4>
-                  <p className="text-sm text-gray-600">Available for single chamber testing</p>
+                  <h4 className="font-medium text-gray-900">Free Trial</h4>
+                  <p className="text-sm text-gray-600">Full platform access for chamber testing</p>
                 </div>
               </div>
-              <Button className="w-full mt-6" asChild>
-                <Link to="/pricing/free-trial">Get Started Today</Link>
-              </Button>
+              <div className="space-y-3 mt-6">
+                <Button className="w-full" asChild>
+                  <Link to="/pricing">View Pricing Calculator</Link>
+                </Button>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link to="/auth/chamber-signup">Start Free Trial</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
