@@ -25,21 +25,35 @@ export default function Growth() {
   const navigate = useNavigate()
   const [currentMembers, setCurrentMembers] = useState(150)
   const [monthlyDues, setMonthlyDues] = useState(50)
+  const [yearlyDues, setYearlyDues] = useState(600)
   const [trialConversionRate, setTrialConversionRate] = useState(30)
   const [trialsPerMonth, setTrialsPerMonth] = useState(20)
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
+  const [billingMode, setBillingMode] = useState<'monthly' | 'yearly'>('monthly')
+  const [yearlyDiscount, setYearlyDiscount] = useState(10) // 0-20% configurable discount
   const [showTieredOptions, setShowTieredOptions] = useState(false)
 
-  // Calculate growth metrics
+  // Calculate growth metrics based on billing mode
   const newMembersPerMonth = Math.round(trialsPerMonth * (trialConversionRate / 100))
   const newMembersPerYear = newMembersPerMonth * 12
   
-  // Adjust for billing cycle (yearly often has discounts)
-  const yearlyDiscount = 0.15 // 15% discount for yearly billing
-  const effectiveMonthlyDues = billingCycle === 'yearly' ? monthlyDues * (1 - yearlyDiscount) : monthlyDues
+  let effectiveMonthlyRate: number
+  let effectiveYearlyRate: number
+  let annualRevenuePerMember: number
   
-  const additionalRevenue = newMembersPerYear * effectiveMonthlyDues * 12
-  const platformCost = currentMembers * effectiveMonthlyDues * 12 * 0.10
+  if (billingMode === 'monthly') {
+    effectiveMonthlyRate = monthlyDues
+    effectiveYearlyRate = monthlyDues * 12
+    annualRevenuePerMember = monthlyDues * 12
+  } else {
+    // Yearly mode with configurable discount
+    const discountedYearlyDues = yearlyDues * (1 - yearlyDiscount / 100)
+    effectiveYearlyRate = discountedYearlyDues
+    effectiveMonthlyRate = discountedYearlyDues / 12
+    annualRevenuePerMember = discountedYearlyDues
+  }
+  
+  const additionalRevenue = newMembersPerYear * annualRevenuePerMember
+  const platformCost = currentMembers * annualRevenuePerMember * 0.10
   const netGrowthRevenue = additionalRevenue - platformCost
 
   return (
@@ -128,46 +142,70 @@ export default function Growth() {
                     </div>
                   </div>
 
+                  {/* Dues Input - Changes based on billing mode */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Monthly Dues per Member
+                      {billingMode === 'monthly' ? 'Monthly Dues per Member' : 'Yearly Dues per Member'}
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-2 text-gray-500">$</span>
                       <input
                         type="number"
-                        value={monthlyDues}
-                        onChange={(e) => setMonthlyDues(Number(e.target.value))}
+                        value={billingMode === 'monthly' ? monthlyDues : yearlyDues}
+                        onChange={(e) => {
+                          const value = Number(e.target.value)
+                          if (billingMode === 'monthly') {
+                            setMonthlyDues(value)
+                          } else {
+                            setYearlyDues(value)
+                          }
+                        }}
                         className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                       />
                     </div>
                     <div className="flex space-x-2 mt-2">
-                      {[30, 50, 75, 100].map(amount => (
-                        <button
-                          key={amount}
-                          onClick={() => setMonthlyDues(amount)}
-                          className={`px-3 py-1 text-xs rounded ${
-                            monthlyDues === amount 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                        >
-                          ${amount}
-                        </button>
-                      ))}
+                      {billingMode === 'monthly' ? (
+                        [30, 50, 75, 100].map(amount => (
+                          <button
+                            key={amount}
+                            onClick={() => setMonthlyDues(amount)}
+                            className={`px-3 py-1 text-xs rounded ${
+                              monthlyDues === amount 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            ${amount}
+                          </button>
+                        ))
+                      ) : (
+                        [360, 600, 900, 1200].map(amount => (
+                          <button
+                            key={amount}
+                            onClick={() => setYearlyDues(amount)}
+                            className={`px-3 py-1 text-xs rounded ${
+                              yearlyDues === amount 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            ${amount}
+                          </button>
+                        ))
+                      )}
                     </div>
                   </div>
 
-                  {/* Billing Cycle Toggle */}
+                  {/* Billing Mode Toggle */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Billing Cycle
+                      Billing Mode
                     </label>
                     <div className="flex bg-gray-100 rounded-lg p-1">
                       <button
-                        onClick={() => setBillingCycle('monthly')}
+                        onClick={() => setBillingMode('monthly')}
                         className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                          billingCycle === 'monthly'
+                          billingMode === 'monthly'
                             ? 'bg-green-600 text-white'
                             : 'text-gray-600 hover:text-gray-900'
                         }`}
@@ -175,23 +213,46 @@ export default function Growth() {
                         Monthly
                       </button>
                       <button
-                        onClick={() => setBillingCycle('yearly')}
+                        onClick={() => setBillingMode('yearly')}
                         className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-                          billingCycle === 'yearly'
+                          billingMode === 'yearly'
                             ? 'bg-green-600 text-white'
                             : 'text-gray-600 hover:text-gray-900'
                         }`}
                       >
-                        Yearly (15% off)
+                        Yearly
                       </button>
                     </div>
-                    {billingCycle === 'yearly' && (
-                      <p className="text-xs text-green-600 mt-1">
-                        Effective monthly rate: ${effectiveMonthlyDues.toFixed(0)} 
-                        (${(monthlyDues * yearlyDiscount).toFixed(0)} savings/member/month)
-                      </p>
-                    )}
                   </div>
+
+                  {/* Yearly Discount Slider - Only shown in yearly mode */}
+                  {billingMode === 'yearly' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Yearly Discount: {yearlyDiscount}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="20"
+                        value={yearlyDiscount}
+                        onChange={(e) => setYearlyDiscount(Number(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>0%</span>
+                        <span>10%</span>
+                        <span>20%</span>
+                      </div>
+                      <p className="text-xs text-green-600 mt-2">
+                        Effective yearly rate: ${effectiveYearlyRate.toFixed(0)} 
+                        (${(yearlyDues * yearlyDiscount / 100).toFixed(0)} total savings)
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Monthly equivalent: ${effectiveMonthlyRate.toFixed(0)}/month
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-6">
@@ -281,9 +342,9 @@ export default function Growth() {
                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                      <p className="text-green-700">
                        <strong>ROI:</strong> Every trial member who converts generates 
-                       ${(effectiveMonthlyDues * 12).toLocaleString()} in annual revenue
-                       {billingCycle === 'yearly' && (
-                         <span className="text-xs"> (with yearly discount)</span>
+                       ${annualRevenuePerMember.toLocaleString()} in annual revenue
+                       {billingMode === 'yearly' && (
+                         <span className="text-xs"> (with {yearlyDiscount}% yearly discount)</span>
                        )}
                      </p>
                    </div>
@@ -292,8 +353,8 @@ export default function Growth() {
                      <p className="text-green-700">
                        <strong>Platform pays for itself:</strong> Growth revenue covers all platform costs 
                        with ${netGrowthRevenue.toLocaleString()} extra annually
-                       {billingCycle === 'yearly' && (
-                         <span className="text-xs"> (including yearly savings)</span>
+                       {billingMode === 'yearly' && (
+                         <span className="text-xs"> (including ${yearlyDiscount}% yearly savings)</span>
                        )}
                      </p>
                    </div>
@@ -520,12 +581,19 @@ export default function Growth() {
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="text-center mb-6">
-                    <div className="text-3xl font-bold text-gray-700">${monthlyDues}</div>
-                    <div className="text-sm text-gray-500">per month</div>
-                    {billingCycle === 'yearly' && (
-                      <div className="text-xs text-green-600">
-                        ${(monthlyDues * 12 * (1 - yearlyDiscount)).toFixed(0)}/year (15% off)
-                      </div>
+                    {billingMode === 'monthly' ? (
+                      <>
+                        <div className="text-3xl font-bold text-gray-700">${monthlyDues}</div>
+                        <div className="text-sm text-gray-500">per month</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-3xl font-bold text-gray-700">${effectiveYearlyRate.toFixed(0)}</div>
+                        <div className="text-sm text-gray-500">per year</div>
+                        <div className="text-xs text-green-600">
+                          ${effectiveMonthlyRate.toFixed(0)}/month equivalent
+                        </div>
+                      </>
                     )}
                   </div>
                   <ul className="space-y-3 text-sm">
@@ -563,12 +631,19 @@ export default function Growth() {
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="text-center mb-6">
-                    <div className="text-3xl font-bold text-yellow-700">${Math.round(monthlyDues * 1.5)}</div>
-                    <div className="text-sm text-gray-500">per month</div>
-                    {billingCycle === 'yearly' && (
-                      <div className="text-xs text-green-600">
-                        ${(monthlyDues * 1.5 * 12 * (1 - yearlyDiscount)).toFixed(0)}/year (15% off)
-                      </div>
+                    {billingMode === 'monthly' ? (
+                      <>
+                        <div className="text-3xl font-bold text-yellow-700">${Math.round(monthlyDues * 1.5)}</div>
+                        <div className="text-sm text-gray-500">per month</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-3xl font-bold text-yellow-700">${Math.round(effectiveYearlyRate * 1.5)}</div>
+                        <div className="text-sm text-gray-500">per year</div>
+                        <div className="text-xs text-green-600">
+                          ${Math.round(effectiveMonthlyRate * 1.5)}/month equivalent
+                        </div>
+                      </>
                     )}
                   </div>
                   <ul className="space-y-3 text-sm">
@@ -607,12 +682,19 @@ export default function Growth() {
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="text-center mb-6">
-                    <div className="text-3xl font-bold text-purple-700">${Math.round(monthlyDues * 2.5)}</div>
-                    <div className="text-sm text-gray-500">per month</div>
-                    {billingCycle === 'yearly' && (
-                      <div className="text-xs text-green-600">
-                        ${(monthlyDues * 2.5 * 12 * (1 - yearlyDiscount)).toFixed(0)}/year (15% off)
-                      </div>
+                    {billingMode === 'monthly' ? (
+                      <>
+                        <div className="text-3xl font-bold text-purple-700">${Math.round(monthlyDues * 2.5)}</div>
+                        <div className="text-sm text-gray-500">per month</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-3xl font-bold text-purple-700">${Math.round(effectiveYearlyRate * 2.5)}</div>
+                        <div className="text-sm text-gray-500">per year</div>
+                        <div className="text-xs text-green-600">
+                          ${Math.round(effectiveMonthlyRate * 2.5)}/month equivalent
+                        </div>
+                      </>
                     )}
                   </div>
                   <ul className="space-y-3 text-sm">
