@@ -1,0 +1,3 @@
+[33m1f81724[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix: Update package-lock.json to sync with React types changes
+[33mb14784f[m fix: Resolve React types version conflict for Cloudflare deployment
+[33me4aebd6[m fix: Correct platform cost calculation in Growth calculator

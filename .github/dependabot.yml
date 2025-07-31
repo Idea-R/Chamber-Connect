@@ -4,4 +4,22 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5 
+    target-branch: "dev"
+    open-pull-requests-limit: 3
+    groups:
+      development-dependencies:
+        applies-to: version-updates
+        patterns: 
+          - "@types/*"
+          - "eslint*"
+          - "prettier*" 
+          - "vitest*"
+          - "husky"
+          - "@testing-library/*"
+      production-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "react*"
+          - "@stripe/*"
+          - "@supabase/*"
+          - "lucide-react" 
